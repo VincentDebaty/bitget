@@ -47,15 +47,15 @@ app.listen(port, () => {
   
   // For public-only API calls, simply don't provide a key & secret or set them to undefined
   // const client = new SpotClient();
-  
+
   client.getAccounts(PRODUCT_TYPE)
     .then(result => {
-      console.log("FuturesAccount result: ", result);
+      console.log("Get account result: ", result);
       balance = result.data[0].available;
       console.log(balance);
     })
     .catch(err => {
-      console.error("getApiKeyInfo error: ", err);
+      console.error("Get account error: ", err);
     });
 
   // client.getSymbols(PRODUCT_TYPE)
@@ -69,8 +69,8 @@ app.listen(port, () => {
   //   });
 
   async function newOrder(symbol, marginCoin, side, price, qty, leverage){
-    await closePositions();
-    await setLeverage(marginCoin, symbol, leverage);
+    // await closePositions();
+    // await setLeverage(marginCoin, symbol, leverage);
     var params  = {
       marginCoin: marginCoin,
       orderType: 'market',
@@ -78,13 +78,13 @@ app.listen(port, () => {
       size: (parseInt(balance) / price) * qty,
       symbol: symbol
     };
-    
+    console.log(params);
     client.submitOrder(params) 
       .then(result => {
-        return result;
+        console.log('New order: ', result);
       })
       .catch(err => {
-        return err;
+        console.log('Error new order: ', err);
       });
   }
 
