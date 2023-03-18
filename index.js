@@ -27,7 +27,12 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.post('/newOrder', (req, res) => {
     let data = req.body;
-    res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity, data.leverage)));
+    if(data.type == 'entry'){
+      res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity, data.leverage)));
+    }
+    if(data.type == 'exit'){
+      res.send(JSON.stringify(closePositions()));
+    }
 })
 
 app.post('/closeAll', (req, res) => {
@@ -117,3 +122,5 @@ app.listen(port, () => {
         console.log('Set leverage error: ', err);
       });
   }
+
+  client.getCopyFollowersOpenOrder()
