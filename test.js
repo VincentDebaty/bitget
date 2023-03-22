@@ -7,6 +7,7 @@ const port = 3000
 
 const {
   FuturesClient,
+  NewFuturesOrder,
 } = require('bitget-api');
 
 const API_KEY = process.env.API_KEY_COM;
@@ -50,41 +51,34 @@ const start = async function(a, b) {
 }
 
 const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage) {
-  try {
-    const resultLeverage =  await client.setLeverage(symbol, marginCoin, leverage);
-    console.log('set leverage result: ', resultLeverage);
 
-    const sizeCount = await client.getOpenCount(symbol, marginCoin, price, balance * quantity / 100 , leverage);
-    
-    console.log("Size count : " + sizeCount);
+    await client.setLeverage(symbol, marginCoin, leverage) 
+        .then(result => {
+        console.log('Set leverage: ', result);
+        })
+        .catch(err => {
+        console.log('Set leverage error: ', err);
+    });
 
-    if(sizeCount){
+    const order = {
+        marginCoin,
+        orderType: 'market',
+        side,
+        size: (parseInt(balance) / price) * quantity,
+        symbol,
+    };
 
-      const size = sizeCount.data.openCount;
+    console.log('placing order: ', order);
 
-      const order = {
-          marginCoin,
-          orderType: 'market',
-          side,
-          size,
-          symbol,
-      };
+    const result = 
+    await client.submitOrder(order);
 
-      console.log('placing order: ', order);
+    console.log('order result: ', result);
 
-      const result = await client.submitOrder(order);
-
-      console.log('order result: ', result);
-
-      const positionsResult = await client.getPositions('umcbl');
-      const positionsToClose = positionsResult.data.filter(
-          (pos) => pos.total !== '0'
-      );
-    }
-
-  } catch (e) {
-    console.error('request failed: ', e);
-  }
+    const positionsResult = await client.getPositions('umcbl');
+    const positionsToClose = positionsResult.data.filter(
+        (pos) => pos.total !== '0'
+    );
 }
 
 const closePositions = async function(){
