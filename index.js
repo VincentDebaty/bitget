@@ -31,16 +31,14 @@ app.post('/order', (req, res) => {
       res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity, data.leverage)));
     }
     if(data.type == 'exit'){
-      res.send(JSON.stringify(closePositions()));
+      res.send(JSON.stringify(closePositions(data.symbol)));
     }
 })
 
 const PRODUCT_TYPE = 'sumcbl';
-const symbol = "SBTCSUSDT_SUMCBL";
-const marginCoin = "SUSDT";
 var balance = 0;
 
-const start = async function(a, b) {
+const getBalance = async function(symbol, marginCoin) {
     const balanceResult = await client.getAccount(symbol, marginCoin);
     const accountBalance = balanceResult.data;
     // const balances = allBalances.filter((bal) => Number(bal.available) != 0);
@@ -51,12 +49,14 @@ const start = async function(a, b) {
 
 const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage) {
   try {
-    const resultLeverage =  await client.setLeverage(symbol, marginCoin, leverage);
+    await getBalance(symbol, marginCoin);
+
+    const resultLeverage = await client.setLeverage(symbol, marginCoin, leverage);
     console.log('set leverage result: ', resultLeverage);
 
     const sizeCount = await client.getOpenCount(symbol, marginCoin, price, balance * quantity / 100 , leverage);
     
-    console.log("Size count : " + sizeCount);
+    console.log("Size count : " + sizeCount.data.openCount);
 
     if(sizeCount){
 
@@ -87,28 +87,30 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
   }
 }
 
-const closePositions = async function(){
+const closePositions = async function(symbol){
     const positionsResult = await client.getPositions(PRODUCT_TYPE);
     const positionsToClose = positionsResult.data.filter(
       (pos) => pos.total !== '0'
     );
 
     for (const position of positionsToClose) {
-      const closingSide =
-        position.holdSide === 'long' ? 'close_long' : 'close_short';
-      const closingOrder = {
-        marginCoin: position.marginCoin,
-        orderType: 'market',
-        side: closingSide,
-        size: position.available,
-        symbol: position.symbol,
-      };
+      if(position.symbol == symbol){
+        const closingSide =
+          position.holdSide === 'long' ? 'close_long' : 'close_short';
+        const closingOrder = {
+          marginCoin: position.marginCoin,
+          orderType: 'market',
+          side: closingSide,
+          size: position.available,
+          symbol: position.symbol,
+        };
 
-      console.log('closing position with market order: ', closingOrder);
+        console.log('closing position with market order: ', closingOrder);
 
-      const result = await client.submitOrder(closingOrder);
-      console.log('position closing order result: ', result);
+        const result = await client.submitOrder(closingOrder);
+        console.log('position closing order result: ', result);
+      }
     }
 }
 
-start();
+getBalance('SBTCSUSDT_SUMCBL', 'SUSDT');
