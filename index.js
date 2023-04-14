@@ -35,7 +35,7 @@ app.post('/order', (req, res) => {
     }
 })
 
-const PRODUCT_TYPE = 'sumcbl';
+const PRODUCT_TYPE = 'umcbl';
 var balance = 0;
 
 const getBalance = async function(symbol, marginCoin) {
@@ -88,10 +88,12 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
 }
 
 const closePositions = async function(symbol){
+  
     const positionsResult = await client.getPositions(PRODUCT_TYPE);
     const positionsToClose = positionsResult.data.filter(
       (pos) => pos.total !== '0'
     );
+    console.log(positionsToClose);
 
     for (const position of positionsToClose) {
       if(position.symbol == symbol){
@@ -113,4 +115,4 @@ const closePositions = async function(symbol){
     }
 }
 
-getBalance('SBTCSUSDT_SUMCBL', 'SUSDT');
+getBalance('BTCUSDT_UMCBL', 'USDT');
