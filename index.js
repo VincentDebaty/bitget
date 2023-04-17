@@ -35,6 +35,11 @@ app.post('/order', (req, res) => {
     }
 })
 
+app.post('/balance', (req, res) => {
+  let data = req.body;
+  res.send(JSON.stringify(getBalance(data.symbol, data.margin_coin)));
+})
+
 const PRODUCT_TYPE = 'umcbl';
 var balance = 0;
 
