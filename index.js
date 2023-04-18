@@ -28,7 +28,7 @@ app.listen(port, () => {
 app.post('/order', (req, res) => {
     let data = req.body;
     if(data.type == 'entry'){
-      res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity, data.leverage)));
+      res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity)));
     }
     if(data.type == 'exit'){
       res.send(JSON.stringify(closePositions(data.symbol)));
@@ -38,7 +38,11 @@ app.post('/order', (req, res) => {
 app.post('/balance', (req, res) => {
   let data = req.body;
   res.send(JSON.stringify(getBalance(data.symbol, data.margin_coin)));
-  // fix deploy
+})
+
+app.post('/leverage', (req, res) => {
+  let data = req.body;
+  res.send(JSON.stringify(getBalance(data.symbol, data.margin_coin, data.leverage)));
 })
 
 const PRODUCT_TYPE = 'umcbl';
@@ -53,16 +57,9 @@ const getBalance = async function(symbol, marginCoin) {
     console.log('USDT balance: ', usdtAmount);
 }
 
-const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage) {
+const newOrder = async function(symbol, marginCoin, side, price, quantity) {
   try {
-    await getBalance(symbol, marginCoin);
-
-    const resultLeverage = await client.setLeverage(symbol, marginCoin, leverage);
-    console.log('set leverage result: ', resultLeverage);
-
     const sizeCount = await client.getOpenCount(symbol, marginCoin, price, balance * quantity / 100 , leverage);
-    
-    console.log("Size count : " + sizeCount.data.openCount);
 
     if(sizeCount){
 
@@ -119,6 +116,15 @@ const closePositions = async function(symbol){
         console.log('position closing order result: ', result);
       }
     }
+}
+
+const setLeverage = async function(symbol, marginCoin, leverage) {
+  try {
+    const resultLeverage = await client.setLeverage(symbol, marginCoin, leverage);
+    console.log('set leverage result: ', resultLeverage);
+  } catch (e) {
+    console.error('request failed: ', e);
+  }
 }
 
 getBalance('BTCUSDT_UMCBL', 'USDT');
