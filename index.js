@@ -60,6 +60,7 @@ const getBalance = async function(symbol, marginCoin) {
 const newOrder = async function(symbol, marginCoin, side, price, quantity) {
   try {
     const sizeCount = await client.getOpenCount(symbol, marginCoin, price, balance * quantity / 100);
+    console.log('Size: ' + sizeCount)
 
     if(sizeCount){
 
