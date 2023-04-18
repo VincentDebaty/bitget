@@ -28,7 +28,7 @@ app.listen(port, () => {
 app.post('/order', (req, res) => {
     let data = req.body;
     if(data.type == 'entry'){
-      res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity)));
+      res.send(JSON.stringify(newOrder(data.symbol, data.margin_coin, data.side, data.price, data.quantity, data.leverage)));
     }
     if(data.type == 'exit'){
       res.send(JSON.stringify(closePositions(data.symbol)));
@@ -57,10 +57,9 @@ const getBalance = async function(symbol, marginCoin) {
     console.log('USDT balance: ', usdtAmount);
 }
 
-const newOrder = async function(symbol, marginCoin, side, price, quantity) {
+const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage) {
   try {
-    const sizeCount = await client.getOpenCount(symbol, marginCoin, price, balance * quantity / 100);
-    console.log('Size: ' + sizeCount)
+    const sizeCount = await client.getOpenCount(symbol, marginCoin, price, balance * quantity / 100 , leverage);
 
     if(sizeCount){
 
