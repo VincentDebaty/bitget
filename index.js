@@ -42,7 +42,7 @@ app.post('/balance', (req, res) => {
 
 app.post('/leverage', (req, res) => {
   let data = req.body;
-  res.send(JSON.stringify(getBalance(data.symbol, data.margin_coin, data.leverage)));
+  res.send(JSON.stringify(setLeverage(data.symbol, data.margin_coin, data.leverage)));
 })
 
 const PRODUCT_TYPE = 'umcbl';
