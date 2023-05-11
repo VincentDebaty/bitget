@@ -25,6 +25,10 @@ app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
 
+app.get('/test', (req, res) => {
+  res.sendStatus(200)
+})
+
 app.post('/order', (req, res) => {
     let data = req.body;
     if(data.type == 'entry'){
