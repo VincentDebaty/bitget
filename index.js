@@ -68,7 +68,7 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
     //if(sizeCount){
 
       const sizeMultiplier = parseFloat(currentPosition.settings.sizeMultiplier);
-      const size = Math.round(quantity / sizeMultiplier) * sizeMultiplier;
+      const size = parseFloat((Math.round(quantity / sizeMultiplier) * sizeMultiplier).toFixed(sizeMultiplier.toString().split('.')[1].length || 0));
 
       if(size > 0) {
         if(currentPosition.plan != null){
