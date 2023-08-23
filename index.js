@@ -28,7 +28,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
-    //run('SEOSSUSDT_SUMCBL','SUSDT', 1, 10, 100, 0.5);
+    run(process.env.SYMBOL,process.env.MARGIN_COIN, process.env.MINUTES, process.env.PERIOD, process.env.AMOUNT, process.env.POURCENTAGE);
 })
 
 app.get('/test', (req, res) => {
