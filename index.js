@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const port = process.env.NODE_PORT;
 
-const EMA = require('technicalindicators').EMA
+const SMA = require('technicalindicators').SMA
 
 
 const {
@@ -178,7 +178,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
     currentPosition = {
       plan: null,
       SL: false,
-      ema: 0,
+      sma: 0,
       settings: null,
       initAmount: 0,
     };
@@ -202,10 +202,10 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
-      var ema = EMA.calculate({period: period, values: candles.map((x) => parseFloat(x[4]))});
-      currentPosition.ema = formatNumber(ema[ema.length-2], symbol);
+      var sma = SMA.calculate({period: period, values: candles.map((x) => parseFloat(x[4]))});
+      currentPosition.sma = formatNumber(sma[sma.length-2], symbol);
 
-      console.log('Ema: ' + currentPosition.ema);
+      console.log('SMA: ' + currentPosition.sma);
 
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
@@ -234,12 +234,12 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
     
         if(lossInARow < maxLossInARow){
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
-          var quantity = positionAmount * leverage / currentPosition.ema;
+          var quantity = positionAmount * leverage / currentPosition.sma;
           
-          if(currentPrice < currentPosition.ema){
-            await newOrder(symbol, marginCoin, 'open_long', currentPosition.ema, quantity, leverage);
+          if(currentPrice < currentPosition.sma){
+            await newOrder(symbol, marginCoin, 'open_long', currentPosition.sma, quantity, leverage);
           }else{
-            await newOrder(symbol, marginCoin, 'open_short', currentPosition.ema, quantity, leverage);
+            await newOrder(symbol, marginCoin, 'open_short', currentPosition.sma, quantity, leverage);
           }
         }
       }else{
