@@ -11,7 +11,8 @@ module.exports = {
         MINUTES: 1,
         PERIOD: 10,
         AMOUNT: 2,
-        POURCENTAGE: 0.5
+        POURCENTAGE: 0.5,
+        LEVERAGE: 50
       }
     },
     {
@@ -25,7 +26,8 @@ module.exports = {
         MINUTES: 1,
         PERIOD: 10,
         AMOUNT: 2,
-        POURCENTAGE: 0.5
+        POURCENTAGE: 0.5,
+        LEVERAGE: 50
       }
     },
     {
@@ -39,7 +41,8 @@ module.exports = {
         MINUTES: 1,
         PERIOD: 10,
         AMOUNT: 2,
-        POURCENTAGE: 0.5
+        POURCENTAGE: 0.5,
+        LEVERAGE: 50
       }
     }
   ]

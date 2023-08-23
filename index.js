@@ -28,7 +28,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
-    run(process.env.SYMBOL,process.env.MARGIN_COIN, process.env.MINUTES, process.env.PERIOD, process.env.AMOUNT, process.env.POURCENTAGE);
+    run(process.env.SYMBOL,process.env.MARGIN_COIN, process.env.MINUTES, process.env.PERIOD, process.env.AMOUNT, process.env.POURCENTAGE, process.env.LEVERAGE);
 })
 
 app.get('/test', (req, res) => {
@@ -37,7 +37,7 @@ app.get('/test', (req, res) => {
 
 app.post('/run', (req, res) => {
     let data = req.body;
-    res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.period, data.amount, data.pourcentage)));
+    res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.period, data.amount, data.pourcentage, data.leverage)));
 })
 
 app.post('/stop', (req, res) => {
@@ -63,8 +63,8 @@ const getBalance = async function(symbol, marginCoin) {
 
 const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage) {
   try {
-    const sizeCount = await client.getOpenCount(symbol, marginCoin, price, quantity * price, leverage);
-    if(sizeCount){
+    //const sizeCount = await client.getOpenCount(symbol, marginCoin, price, quantity * price, leverage);
+    //if(sizeCount){
 
       const sizeMultiplier = parseFloat(currentPosition.settings.sizeMultiplier);
       const size = Math.round(quantity / sizeMultiplier) * sizeMultiplier;
@@ -93,7 +93,7 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
       }else{
         console.log('**** Size too low !!! ****');
       }
-    }
+    //}
 
   } catch (e) {
     console.error('request failed: ', e);
@@ -182,7 +182,7 @@ const stop = function(symbol){
   }
 }
 
-const run = async function(symbol, marginCoin, minutes, period, amount, pourcentage){
+const run = async function(symbol, marginCoin, minutes, period, amount, pourcentage, leverage){
   if(!currentPosition){
     currentPosition = {
       plan: null,
@@ -238,11 +238,10 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
       if(positions.length == 0){
         currentPosition.SL = false;
-        
+    
         if(lossInARow < maxLossInARow){
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
-          var quantity = positionAmount / currentPosition.ema;
-          var leverage = 50;
+          var quantity = positionAmount * leverage / currentPosition.ema;
           
           if(currentPrice < currentPosition.ema){
             await newOrder(symbol, marginCoin, 'open_long', currentPosition.ema, quantity, leverage);
@@ -278,7 +277,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
       if(lossInARow < maxLossInARow){
         console.log('-------');
-        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage), 10000);
+        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage, leverage), 10000);
       }
     }
   } catch (e) {
