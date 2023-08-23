@@ -203,10 +203,10 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
       var ema = EMA.calculate({period: period, values: candles.map((x) => parseFloat(x[4]))});
-      currentPosition.ema = formatNumber(ema[ema.length-1], symbol);
+      currentPosition.ema = formatNumber(ema[ema.length-2], symbol);
 
       console.log('Ema: ' + currentPosition.ema);
-      
+
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
           (pos) => pos.total !== '0' && pos.symbol == symbol
