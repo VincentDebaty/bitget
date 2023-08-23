@@ -73,7 +73,11 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
       if(size > 0) {
         if(currentPosition.plan != null){
           console.log('Remove plan...');
-          await client.cancelPlanOrderTPSL({orderId: currentPosition.plan.orderId, symbol, marginCoin, planType: 'normal_plan'});
+          try {
+            await client.cancelPlanOrderTPSL({orderId: currentPosition.plan.orderId, symbol, marginCoin, planType: 'normal_plan'});
+          } catch(e){
+            currentPosition.plan == null;
+          }
         }
         const order = {
           marginCoin,
