@@ -28,6 +28,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
+    //run('SEOSSUSDT_SUMCBL','SUSDT', 1, 10, 100, 0.5);
 })
 
 app.get('/test', (req, res) => {
@@ -36,15 +37,6 @@ app.get('/test', (req, res) => {
 
 app.post('/run', (req, res) => {
     let data = req.body;
-    if(!currentPosition){
-      currentPosition = {
-        plan: null,
-        SL: false,
-        ema: 0,
-        settings: null,
-        initAmount: 0,
-      };
-    }
     res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.period, data.amount, data.pourcentage)));
 })
 
@@ -74,7 +66,8 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
     const sizeCount = await client.getOpenCount(symbol, marginCoin, price, quantity * price, leverage);
     if(sizeCount){
 
-      const size = sizeCount.data.openCount;
+      const sizeMultiplier = parseFloat(currentPosition.settings.sizeMultiplier);
+      const size = Math.round(quantity / sizeMultiplier) * sizeMultiplier;
 
       if(size > 0) {
         if(currentPosition.plan != null){
@@ -190,6 +183,16 @@ const stop = function(symbol){
 }
 
 const run = async function(symbol, marginCoin, minutes, period, amount, pourcentage){
+  if(!currentPosition){
+    currentPosition = {
+      plan: null,
+      SL: false,
+      ema: 0,
+      settings: null,
+      initAmount: 0,
+    };
+  }
+
   try {
     if(currentPosition){
       console.log(symbol);
@@ -282,5 +285,3 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
     console.error('run failed: ', e);
   }
 }
-
-//run('SBTCSUSDT_SUMCBL','SUSDT', 1, 10, 100, 0.5);
