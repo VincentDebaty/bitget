@@ -126,7 +126,7 @@ const getCandles = async function(symbol, granularityInMinute, candlesToFetch) {
   try {
     const timestampNow = Date.now();
     const msPerCandle = granularityInMinute * 60 * 1000; // 60 seconds x 1000
-    const msFor1kCandles = candlesToFetch * 2 * msPerCandle;
+    const msFor1kCandles = candlesToFetch * 4 * msPerCandle;
     const startTime = timestampNow - msFor1kCandles;
 
     const resultCandles = await client.getCandles(symbol, granularityInMinute + 'm', startTime.toString(), timestampNow.toString());
@@ -208,9 +208,11 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       currentPosition.settings = symbolResult.data.filter((e) => e.symbol == symbol)[0];
 
       var candles = await getCandles(symbol, minutes, period);
+      console.log(candles);
+      
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
-      currentPosition.ema = formatNumber(calculateEMA(candles.map((x) => x[4]), period), symbol);
+      currentPosition.ema = formatNumber(calculateEMA(candles.map((x) => parseFloat(x[4])), period), symbol);
 
       console.log('Ema: ' + currentPosition.ema);
 
