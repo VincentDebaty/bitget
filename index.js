@@ -208,7 +208,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       currentPosition.settings = symbolResult.data.filter((e) => e.symbol == symbol)[0];
 
       var candles = await getCandles(symbol, minutes, period);
-      console.log(candles);
       
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
