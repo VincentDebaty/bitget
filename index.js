@@ -29,7 +29,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
-    run(process.env.SYMBOL,process.env.MARGIN_COIN, process.env.MINUTES, process.env.PERIOD, process.env.AMOUNT, process.env.POURCENTAGE, process.env.LEVERAGE);
+    run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), parseInt(process.env.PERIOD), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
 })
 
 app.get('/test', (req, res) => {
