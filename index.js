@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const port = process.env.NODE_PORT;
 
+const EMA = require('technicalindicators').EMA
 
 
 const {
@@ -126,7 +127,7 @@ const getCandles = async function(symbol, granularityInMinute, candlesToFetch) {
   try {
     const timestampNow = Date.now();
     const msPerCandle = granularityInMinute * 60 * 1000; // 60 seconds x 1000
-    const msFor1kCandles = candlesToFetch * 4 * msPerCandle;
+    const msFor1kCandles = candlesToFetch * 2 * msPerCandle;
     const startTime = timestampNow - msFor1kCandles;
 
     const resultCandles = await client.getCandles(symbol, granularityInMinute + 'm', startTime.toString(), timestampNow.toString());
@@ -156,16 +157,6 @@ const getOrderHistory = async function(symbol){
     console.error('request failed: ', e);
   }
   
-}
-
-function calculateEMA(closingPrices, period) {
-  const k = 2 / (period + 1);
-  let ema = closingPrices[0];
-  for (let i = 1; i < closingPrices.length; i++) {
-    ema = (closingPrices[i] * k) + (ema * (1 - k));
-  }
-
-  return ema;
 }
 
 function formatNumber(number, symbol) {
@@ -211,10 +202,11 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
-      currentPosition.ema = formatNumber(calculateEMA(candles.map((x) => parseFloat(x[4])), period), symbol);
+      var ema = EMA.calculate({period: period, values: candles.map((x) => parseFloat(x[4]))});
+      currentPosition.ema = formatNumber(ema[ema.length-1], symbol);
 
       console.log('Ema: ' + currentPosition.ema);
-
+      
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
           (pos) => pos.total !== '0' && pos.symbol == symbol
