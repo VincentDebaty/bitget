@@ -72,7 +72,7 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
       if(size > 0) {
         const order = {
           marginCoin,
-          orderType: 'limit',
+          orderType: 'market',
           price,
           side,
           size,
@@ -225,11 +225,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
         });
         lastTrade = orderHistory.data.orderList[0];
       }
-      
-      const openOrders = await getOpenOrders(symbol);
-      if(openOrders.data.length > 0 && openOrders.data[0]){
-        await client.cancelOrder(symbol, marginCoin, openOrders.data[0].orderId);
-      }
 
       if(positions.length == 0){
         currentPosition.SL = 0;
@@ -249,8 +244,8 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
         var tp = 0;
         var sl = 0;
-        var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.makerFeeRate * 100) + (currentPosition.settings.takerFeeRate * 100)) / 100, symbol);
-        var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.makerFeeRate * 100) + (currentPosition.settings.takerFeeRate * 100)) / 100, symbol);
+        var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+        var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
 
         if(currentPosition.SL < 2){
           if(positions[0].holdSide == 'long'){
