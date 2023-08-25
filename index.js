@@ -186,7 +186,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
   try {
     if(currentPosition){
       console.log(symbol);
-      console.log(currentPosition);
       //await getBalance(symbol, marginCoin);
 
       if(currentPosition.initAmount == 0){
@@ -228,7 +227,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       }
       
       const openOrders = await getOpenOrders(symbol);
-      if(openOrders.data.length == 0 && openOrders.data[0]){
+      if(openOrders.data.length > 0 && openOrders.data[0]){
         await client.cancelOrder(symbol, marginCoin, openOrders.data[0].orderId);
       }
 
