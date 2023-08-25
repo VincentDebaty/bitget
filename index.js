@@ -105,7 +105,7 @@ const submitPositionTPSL = async function(symbol, marginCoin, planType, triggerP
     };
     console.log(params)
     const result = await client.submitPositionTPSL(params);
-    currentPosition.SL = true;
+    currentPosition.SL = currentPosition.SL + 1;
     console.log(result);
   } catch (e) {
     console.error('request failed: ', e);
@@ -177,7 +177,7 @@ const stop = function(symbol){
 const run = async function(symbol, marginCoin, minutes, period, amount, pourcentage, leverage){
   if(!currentPosition){
     currentPosition = {
-      SL: false,
+      SL: 0,
       settings: null,
       initAmount: 0,
     };
@@ -229,7 +229,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       const openOrders = await getOpenOrders(symbol);
       if(openOrders.data.length == 0){
         if(positions.length == 0){
-          currentPosition.SL = false;
+          currentPosition.SL = 0;
       
           if(lossInARow < maxLossInARow){
             var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
@@ -249,7 +249,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
           var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 100)) / 100, symbol);
           var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 100)) / 100, symbol);
 
-          if(!currentPosition.SL){
+          if(currentPosition.SL < 2){
             if(positions[0].holdSide == 'long'){
               tp = formatNumber(averageOpenPrice + gainTP, symbol);
               sl = averageOpenPrice - gainSL, symbol;
