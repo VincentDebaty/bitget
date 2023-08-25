@@ -51,7 +51,7 @@ module.exports = {
       watch  : true,
       env: {
         NODE_PORT:"3003",
-        SYMBOL: "EOSPSUSDT_SUMCBL",
+        SYMBOL: "SEOSSUSDT_SUMCBL",
         MARGIN_COIN: "SUSDT",
         MINUTES: 1,
         PERIOD: 10,
