@@ -153,7 +153,7 @@ const getOrderHistory = async function(symbol){
     const period = hours * 60 * 60 * 1000; // 60 seconds x 1000
     const startTime = timestampNow - period;
 
-    return await client.getOrderHistory(symbol, startTime, timestampNow.toString(), 10);
+    return await client.getOrderHistory(symbol, startTime, timestampNow.toString(), 50);
   } catch (e) {
     console.error('request failed: ', e);
   }
