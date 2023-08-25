@@ -5,6 +5,8 @@ const bodyParser = require('body-parser')
 const app = express()
 const port = process.env.NODE_PORT;
 
+const SMA = require('technicalindicators').SMA
+
 
 const {
   FuturesClient,
@@ -70,18 +72,30 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
       const size = parseFloat((Math.round(quantity / sizeMultiplier) * sizeMultiplier).toFixed(decimal));
 
       if(size > 0) {
+        if(currentPosition.plan != null){
+          console.log('Remove plan...');
+          try {
+            await client.cancelPlanOrderTPSL({orderId: currentPosition.plan.orderId, symbol, marginCoin, planType: 'normal_plan'});
+          } catch(e){
+            currentPosition.plan = null;
+          }
+        }
         const order = {
           marginCoin,
           orderType: 'market',
+          triggerType: 'fill_price',
           side,
           size,
           symbol,
+          triggerPrice: price,
+          executePrice: price,
         };
 
-        console.log('placing order: ', order);
+        console.log('placing plan: ', order);
 
-        const result = await client.submitOrder(order);
-        console.log('order result: ', result);
+        const result = await client.submitPlanOrder(order);
+        console.log('plan result: ', result);
+        currentPosition.plan = result.data;
       }else{
         console.log('**** Size too low !!! ****');
       }
@@ -167,7 +181,9 @@ const stop = function(symbol){
 const run = async function(symbol, marginCoin, minutes, period, amount, pourcentage, leverage){
   if(!currentPosition){
     currentPosition = {
+      plan: null,
       SL: false,
+      sma: 0,
       settings: null,
       initAmount: 0,
     };
@@ -191,6 +207,10 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
+      var sma = SMA.calculate({period: period, values: candles.map((x) => parseFloat(x[4]))});
+      currentPosition.sma = formatNumber(sma[sma.length-2], symbol);
+
+      console.log('SMA: ' + currentPosition.sma);
 
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
@@ -200,7 +220,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
       var lossInARow = 0;
       var lockedRow = false;
-      var lastTrade = null;
 
       var orderHistory = await getOrderHistory(symbol);
       if(orderHistory.data.orderList){
@@ -213,7 +232,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
             }
           }
         });
-        lastTrade = orderHistory.data.orderList[0];
       }
 
       if(positions.length == 0){
@@ -221,15 +239,16 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
     
         if(lossInARow < maxLossInARow){
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
-          var quantity = positionAmount * leverage / currentPrice
+          var quantity = positionAmount * leverage / currentPosition.sma;
           
-          if(lastTrade == null || (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) || (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)){
-            await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
+          if(currentPrice < currentPosition.sma){
+            await newOrder(symbol, marginCoin, 'open_long', currentPosition.sma, quantity, leverage);
           }else{
-            await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage);
+            await newOrder(symbol, marginCoin, 'open_short', currentPosition.sma, quantity, leverage);
           }
         }
       }else{
+        currentPosition.plan = null;
         var averageOpenPrice = positions[0].averageOpenPrice * 1;
 
         var tp = 0;
