@@ -72,7 +72,8 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
       if(size > 0) {
         const order = {
           marginCoin,
-          orderType: 'market',
+          orderType: 'limit',
+          price,
           side,
           size,
           symbol,
@@ -99,7 +100,7 @@ const submitPositionTPSL = async function(symbol, marginCoin, planType, triggerP
       marginCoin,
       planType,
       triggerPrice,
-      triggerType: 'market_price',
+      triggerType: 'fill_price',
       holdSide
     };
     console.log(params)

@@ -44,6 +44,21 @@ module.exports = {
         POURCENTAGE: 0.5,
         LEVERAGE: 50
       }
+    },
+    {
+      name   : "eos",
+      script : "./index.js",
+      watch  : true,
+      env: {
+        NODE_PORT:"3003",
+        SYMBOL: "EOSPSUSDT_SUMCBL",
+        MARGIN_COIN: "SUSDT",
+        MINUTES: 1,
+        PERIOD: 10,
+        AMOUNT: 2,
+        POURCENTAGE: 0.5,
+        LEVERAGE: 50
+      }
     }
   ]
 }
