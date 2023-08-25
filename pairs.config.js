@@ -11,7 +11,7 @@ module.exports = {
         MINUTES: 1,
         PERIOD: 10,
         AMOUNT: 2,
-        POURCENTAGE: 0.5,
+        POURCENTAGE: 0.2,
         LEVERAGE: 50
       }
     },
@@ -26,7 +26,7 @@ module.exports = {
         MINUTES: 1,
         PERIOD: 10,
         AMOUNT: 2,
-        POURCENTAGE: 0.5,
+        POURCENTAGE: 0.2,
         LEVERAGE: 50
       }
     },
@@ -41,22 +41,7 @@ module.exports = {
         MINUTES: 1,
         PERIOD: 10,
         AMOUNT: 2,
-        POURCENTAGE: 0.5,
-        LEVERAGE: 50
-      }
-    },
-    {
-      name   : "eos",
-      script : "./index.js",
-      watch  : true,
-      env: {
-        NODE_PORT:"3003",
-        SYMBOL: "SEOSSUSDT_SUMCBL",
-        MARGIN_COIN: "SUSDT",
-        MINUTES: 1,
-        PERIOD: 10,
-        AMOUNT: 2,
-        POURCENTAGE: 0.5,
+        POURCENTAGE: 0.2,
         LEVERAGE: 50
       }
     }
