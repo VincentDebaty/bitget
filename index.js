@@ -4,7 +4,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 const port = process.env.NODE_PORT;
-
+const ADX = require('technicalindicators').ADX;
 
 const {
   FuturesClient,
@@ -128,7 +128,7 @@ const getCandles = async function(symbol, granularityInMinute, candlesToFetch) {
   try {
     const timestampNow = Date.now();
     const msPerCandle = granularityInMinute * 60 * 1000; // 60 seconds x 1000
-    const msFor1kCandles = candlesToFetch * 2 * msPerCandle;
+    const msFor1kCandles = candlesToFetch * 10 * msPerCandle;
     const startTime = timestampNow - msFor1kCandles;
 
     const resultCandles = await client.getCandles(symbol, granularityInMinute + 'm', startTime.toString(), timestampNow.toString());
@@ -202,6 +202,11 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
 
+      var adxInput = {period : 20, high : candles.map((e) => parseFloat(e[2])), low:candles.map((e) => parseFloat(e[3])), close:candles.map((e) => parseFloat(e[4]))};
+      var adx = new ADX(adxInput).getResult();
+
+      var adxValue = adx[adx.length-1].adx;
+
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
           (pos) => pos.total !== '0' && pos.symbol == symbol
@@ -233,7 +238,20 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
           var quantity = positionAmount * leverage / currentPrice
           
-          if(lastTrade == null || (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) || (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)){
+          if(lastTrade == null || 
+            (
+              (
+                (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
+                (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
+              ) && adxValue > 10
+            ) || 
+            (
+              (
+                (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
+                (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+              ) && adxValue <= 10
+            )
+          ){
             await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
           }else{
             await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage);
