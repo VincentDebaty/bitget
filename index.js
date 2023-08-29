@@ -4,7 +4,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 const port = process.env.NODE_PORT;
-const ADX = require('technicalindicators').ADX;
+
+let TRIX = require('technicalindicators').TRIX; 
 
 const {
   FuturesClient,
@@ -202,10 +203,12 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
 
-      var adxInput = {period : 20, high : candles.map((e) => parseFloat(e[2])), low:candles.map((e) => parseFloat(e[3])), close:candles.map((e) => parseFloat(e[4]))};
-      var adx = new ADX(adxInput).getResult();
-
-      var adxValue = adx[adx.length-1].adx;
+      let input = {
+        values: candles.map((e) => parseFloat(e[4])),
+        period: 18
+      };
+      
+      var trixValue = TRIX.calculate(input).map((e) => e * 100);
 
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
@@ -238,19 +241,19 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
           var quantity = positionAmount * leverage / currentPrice
           
-          if(lastTrade == null || 
-            (
+          if(
+            (lastTrade == null || 
               (
                 (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
                 (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
-              ) && adxValue > 10
-            ) || 
-            (
+              ) || 
               (
                 (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
                 (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
-              ) && adxValue <= 10
-            )
+              )
+            ) && 
+            (lossInARow < 6 || lossInARow >= 6 && trixValue >=0)
+             
           ){
             await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
           }else{
