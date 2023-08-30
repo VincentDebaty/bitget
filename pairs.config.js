@@ -5,7 +5,7 @@ module.exports = {
       script : "./index.js",
       watch  : true,
       env: {
-        NODE_PORT:"3000",
+        NODE_PORT:"3001",
         SYMBOL: "SBTCSUSDT_SUMCBL",
         MARGIN_COIN: "SUSDT",
         MINUTES: 1,
@@ -20,7 +20,7 @@ module.exports = {
       script : "./index.js",
       watch  : true,
       env: {
-        NODE_PORT:"3001",
+        NODE_PORT:"3002",
         SYMBOL: "SETHSUSDT_SUMCBL",
         MARGIN_COIN: "SUSDT",
         MINUTES: 1,
@@ -35,7 +35,7 @@ module.exports = {
       script : "./index.js",
       watch  : true,
       env: {
-        NODE_PORT:"3002",
+        NODE_PORT:"3003",
         SYMBOL: "SXRPSUSDT_SUMCBL",
         MARGIN_COIN: "SUSDT",
         MINUTES: 1,
