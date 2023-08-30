@@ -5,8 +5,6 @@ const bodyParser = require('body-parser')
 const app = express()
 const port = process.env.NODE_PORT;
 
-let TRIX = require('technicalindicators').TRIX; 
-
 const {
   FuturesClient,
 } = require('bitget-api');
@@ -129,10 +127,11 @@ const getCandles = async function(symbol, granularityInMinute, candlesToFetch) {
   try {
     const timestampNow = Date.now();
     const msPerCandle = granularityInMinute * 60 * 1000; // 60 seconds x 1000
-    const msFor1kCandles = candlesToFetch * 10 * msPerCandle;
+    const msFor1kCandles = candlesToFetch * msPerCandle;
     const startTime = timestampNow - msFor1kCandles;
+    console.log(startTime);
 
-    const resultCandles = await client.getCandles(symbol, granularityInMinute + 'm', startTime.toString(), timestampNow.toString());
+    const resultCandles = await client.getCandles(symbol, granularityInMinute + 'm', startTime.toString(), timestampNow.toString(), candlesToFetch);
     return resultCandles;
   } catch (e) {
     console.error('request failed: ', e);
@@ -198,17 +197,30 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       var symbolResult = await getSymbols(productType);
       currentPosition.settings = symbolResult.data.filter((e) => e.symbol == symbol)[0];
 
-      var candles = await getCandles(symbol, minutes, period);
+      var candles = await getCandles(symbol, minutes, process.env.RANGE_PERIOD);
+
+      var lastHigh = 0
+      var lastLow = 9999999
+      var highInARow = 0
+      var lowInARow = 0
+
+      candles.forEach((candle) => {
+        if(lastHigh < candle[2] || highInARow > process.env.RANGE_PERIOD){
+          lastHigh = candle[2]
+          highInARow = 0
+        }else{
+          highInARow = highInARow + 1
+        }
+        if(lastLow > candle[3] || lowInARow > process.env.RANGE_PERIOD){
+          lastLow = candle[3]
+          lowInARow = 0
+        }else{
+          lowInARow = lowInARow + 1
+        }
+      });
       
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
-
-      let input = {
-        values: candles.map((e) => parseFloat(e[4])),
-        period: 18
-      };
-      
-      var trixValue = TRIX.calculate(input).map((e) => e * 100);
 
       const positionsResult = await client.getPositions(productType);
       const positions = positionsResult.data.filter(
@@ -241,22 +253,36 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
           var quantity = positionAmount * leverage / currentPrice
           
-          if(
-            (lastTrade == null || 
-              (
-                (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
-                (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
-              ) || 
-              (
-                (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
-                (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
-              )
-            ) && 
-            (lossInARow < 6 || lossInARow >= 6 && trixValue >=0)
-             
-          ){
+          var buyCond = (lastTrade == null || 
+            (
+              (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
+              (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
+            ) || 
+            (
+              (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
+              (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+            )
+          );
+
+          var sellCond = 
+            (
+              (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
+              (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+            ) || 
+            (
+              (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
+              (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
+            );
+
+          if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && lastTrade.totalProfits < 0){
+            buyCond = lastTrade.posSide == 'long';
+            sellCond = lastTrade.posSide == 'short';
+          }
+
+          if(buyCond){
             await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
-          }else{
+          }
+          if(sellCond){
             await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage);
           }
         }
