@@ -26,10 +26,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.listen(port, async () => {
     console.log(`Example app listening on port ${port}`)
+    await client.setMarginMode(process.env.SYMBOL, process.env.MARGIN_COIN, 'fixed');
     await client.setLeverage(process.env.SYMBOL, process.env.MARGIN_COIN, process.env.LEVERAGE, 'long');
     await client.setLeverage(process.env.SYMBOL, process.env.MARGIN_COIN, process.env.LEVERAGE, 'short');
-    await client.setMarginMode(process.env.SYMBOL, process.env.MARGIN_COIN, 'fixed');
-    run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), parseInt(process.env.PERIOD), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
+    setTimeout(() => {
+      run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), parseInt(process.env.PERIOD), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
+    }, (port - 3000) * 1000);
+    
 })
 
 app.get('/test', (req, res) => {
