@@ -129,7 +129,6 @@ const getCandles = async function(symbol, granularityInMinute, candlesToFetch) {
     const msPerCandle = granularityInMinute * 60 * 1000; // 60 seconds x 1000
     const msFor1kCandles = candlesToFetch * msPerCandle;
     const startTime = timestampNow - msFor1kCandles;
-    console.log(startTime);
 
     const resultCandles = await client.getCandles(symbol, granularityInMinute + 'm', startTime.toString(), timestampNow.toString(), candlesToFetch);
     return resultCandles;
