@@ -256,10 +256,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
             (
               (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
               (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
-            ) || 
-            (
-              (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
-              (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
             )
           );
 
@@ -267,10 +263,6 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
             (
               (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
               (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
-            ) || 
-            (
-              (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
-              (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
             );
 
           if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && lastTrade.totalProfits < 0){
