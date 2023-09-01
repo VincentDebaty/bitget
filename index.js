@@ -34,7 +34,7 @@ app.listen(port, () => {
       }catch(e){
         console.log(e);
       }
-      run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), parseInt(process.env.PERIOD), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
+      run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
     }, (port - 3000) * 3000);
     
 })
@@ -45,7 +45,7 @@ app.get('/test', (req, res) => {
 
 app.post('/run', (req, res) => {
     let data = req.body;
-    res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.period, data.amount, data.pourcentage, data.leverage)));
+    res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.amount, data.pourcentage, data.leverage)));
 })
 
 app.post('/stop', (req, res) => {
@@ -211,7 +211,7 @@ const stop = function(symbol){
   }
 }
 
-const run = async function(symbol, marginCoin, minutes, period, amount, pourcentage, leverage){
+const run = async function(symbol, marginCoin, minutes, amount, pourcentage, leverage){
   if(!currentPosition){
     currentPosition = {
       SL: 0,
@@ -306,8 +306,10 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
             var sellCond = 
               (
-                (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
-                (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+                lastTrade != null && (
+                  (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
+                  (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+              )
               );
 
             if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && (lastTrade && lastTrade.totalProfits < 0)){
@@ -331,7 +333,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
       if(lossInARow < maxLossInARow){
         console.log('-------');
-        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage, leverage), 12000);
+        setTimeout(() => run(symbol, marginCoin, minutes, amount, pourcentage, leverage), 12000);
       }
     }
   } catch (e) {
