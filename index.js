@@ -34,7 +34,7 @@ app.listen(port, () => {
       }catch(e){
         console.log(e);
       }
-      run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
+      run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE), parseInt(process.env.ACTIVE));
     }, (port - 3000) * 3000);
     
 })
@@ -45,7 +45,7 @@ app.get('/test', (req, res) => {
 
 app.post('/run', (req, res) => {
     let data = req.body;
-    res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.amount, data.pourcentage, data.leverage)));
+    res.send(JSON.stringify(run(data.symbol, data.margin_coin, data.minutes, data.amount, data.pourcentage, data.leverage, data.active)));
 })
 
 app.post('/stop', (req, res) => {
@@ -211,7 +211,7 @@ const stop = function(symbol){
   }
 }
 
-const run = async function(symbol, marginCoin, minutes, amount, pourcentage, leverage){
+const run = async function(symbol, marginCoin, minutes, amount, pourcentage, leverage, active){
   if(!currentPosition){
     currentPosition = {
       SL: 0,
@@ -290,6 +290,9 @@ const run = async function(symbol, marginCoin, minutes, amount, pourcentage, lev
         }
 
         if(positions.length == 0){
+          if(lossInARow==0 && !active){
+            return;
+          }
           currentPosition.SL = 0;
       
           if(lossInARow < maxLossInARow){
@@ -333,7 +336,7 @@ const run = async function(symbol, marginCoin, minutes, amount, pourcentage, lev
 
       if(lossInARow < maxLossInARow){
         console.log('-------');
-        setTimeout(() => run(symbol, marginCoin, minutes, amount, pourcentage, leverage), 12000);
+        setTimeout(() => run(symbol, marginCoin, minutes, amount, pourcentage, leverage, active), 12000);
       }
     }
   } catch (e) {
