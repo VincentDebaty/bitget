@@ -108,7 +108,7 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
   }
 }
 
-const submitPositionTPSL = async function(symbol, marginCoin, planType, triggerPrice, holdSide) {
+const submitStopOrder = async function(symbol, marginCoin, planType, triggerPrice, holdSide) {
   try {
     const params = {
       symbol,
@@ -119,7 +119,7 @@ const submitPositionTPSL = async function(symbol, marginCoin, planType, triggerP
       holdSide
     };
     console.log(params)
-    const result = await client.submitPositionTPSL(params);
+    const result = await client.submitStopOrder(params);
     currentPosition.SL = currentPosition.SL + 1;
     console.log(result);
   } catch (e) {
@@ -185,14 +185,14 @@ const setSLTP = async function(symbol, marginCoin, pourcentage, price, side){
       tp = formatNumber(price + gainTP, symbol);
       sl = price - gainSL, symbol;
       sl = formatNumber(sl);
-      await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'long');
-      await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'long');
+      await submitStopOrder(symbol, marginCoin, 'profit_plan', tp, 'long');
+      await submitStopOrder(symbol, marginCoin, 'loss_plan', sl, 'long');
     }else{
       tp = formatNumber(price - gainTP, symbol);
       sl = price + gainSL, symbol;
       sl = formatNumber(sl)
-      await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'short');
-      await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'short');
+      await submitStopOrder(symbol, marginCoin, 'profit_plan', tp, 'short');
+      await submitStopOrder(symbol, marginCoin, 'loss_plan', sl, 'short');
     }
   }
 }
