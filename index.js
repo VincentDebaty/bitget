@@ -65,7 +65,7 @@ const getBalance = async function(symbol, marginCoin) {
     console.log('USDT balance: ', usdtAmount);
 }
 
-const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage) {
+const newOrder = async function(symbol, marginCoin, side, price, quantity, leverage, pourcentage) {
   try {
     //const sizeCount = await client.getOpenCount(symbol, marginCoin, price, quantity * price, leverage);
     //if(sizeCount){
@@ -87,6 +87,12 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
         console.log('placing order: ', order);
 
         const result = await client.submitOrder(order);
+        
+        const position = await client.getPosition(symbol, marginCoin);
+        if(position.data){
+          setSLTP(symbol, marginCoin, pourcentage, position, price);
+        }
+
         console.log('order result: ', result);
       }else{
         console.log('**** Size too low !!! ****');
@@ -161,8 +167,31 @@ const getOrderHistory = async function(symbol){
     return await client.getOrderHistory(symbol, startTime, timestampNow.toString(), 50);
   } catch (e) {
     console.error('request failed: ', e);
+  } 
+}
+
+const setSLTP = async function(symbol, marginCoin, pourcentage, position, price){
+  var averageOpenPrice = price ? price : position.averageOpenPrice * 1;
+  var tp = 0;
+  var sl = 0;
+  var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+  var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+
+  if(currentPosition.SL < 2){
+    if(position.holdSide == 'long'){
+      tp = formatNumber(averageOpenPrice + gainTP, symbol);
+      sl = averageOpenPrice - gainSL, symbol;
+      sl = formatNumber(sl);
+      await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'long');
+      await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'long');
+    }else{
+      tp = formatNumber(averageOpenPrice - gainTP, symbol);
+      sl = averageOpenPrice + gainSL, symbol;
+      sl = formatNumber(sl)
+      await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'short');
+      await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'short');
+    }
   }
-  
 }
 
 function formatNumber(number, symbol) {
@@ -199,8 +228,10 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
       productType = symbol.substring(symbol.indexOf('_') + 1);
 
-      var symbolResult = await getSymbols(productType);
-      currentPosition.settings = symbolResult.data.filter((e) => e.symbol == symbol)[0];
+      if(!currentPosition.settings){
+        symbolResult = await getSymbols(productType);
+        currentPosition.settings = symbolResult.data.filter((e) => e.symbol == symbol)[0];
+      }
 
       var candles = await getCandles(symbol, minutes, process.env.RANGE_PERIOD);
 
@@ -257,6 +288,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       
           if(lossInARow < maxLossInARow){
             var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
+            // var positionAmount = currentPosition.initAmount;
             var quantity = positionAmount * leverage / currentPrice / pourcentage
             
             var buyCond = (lastTrade == null || 
@@ -278,48 +310,21 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
             }
 
             if(buyCond){
-              await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
+              await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage, pourcentage);
             }
             if(sellCond){
-              await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage);
+              await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage, pourcentage);
             }
           }
         }else{
-          var averageOpenPrice = positions[0].averageOpenPrice * 1;
-
-          var tp = 0;
-          var sl = 0;
-          var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
-          var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
-
-          if(currentPosition.SL < 2){
-            if(positions[0].holdSide == 'long'){
-              tp = formatNumber(averageOpenPrice + gainTP, symbol);
-              sl = averageOpenPrice - gainSL, symbol;
-              if(sl > currentPrice){
-                sl = currentPrice;
-              }
-              sl = formatNumber(sl);
-              await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'long');
-              await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'long');
-            }else{
-              tp = formatNumber(averageOpenPrice - gainTP, symbol);
-              sl = averageOpenPrice + gainSL, symbol;
-              if(sl < currentPrice){
-                sl = currentPrice;
-              }
-              sl = formatNumber(sl)
-              await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'short');
-              await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'short');
-            }
-          }
+          setSLTP(symbol, marginCoin, pourcentage, positions[0], null);
         }
         console.log('Loss in a row : ' + lossInARow);
       }
 
       if(lossInARow < maxLossInARow){
         console.log('-------');
-        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage, leverage), 10000);
+        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage, leverage), 30000);
       }
     }
   } catch (e) {
