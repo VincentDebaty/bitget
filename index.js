@@ -256,7 +256,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
     
         if(lossInARow < maxLossInARow){
           var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
-          var quantity = positionAmount * leverage / currentPrice
+          var quantity = positionAmount * leverage / currentPrice / pourcentage
           
           var buyCond = (lastTrade == null || 
             (
