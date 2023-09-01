@@ -290,7 +290,7 @@ const run = async function(symbol, marginCoin, minutes, amount, pourcentage, lev
         }
 
         if(positions.length == 0){
-          if(lossInARow==0 && !active){
+          if(lossInARow==0 && active=='0'){
             return;
           }
           currentPosition.SL = 0;
