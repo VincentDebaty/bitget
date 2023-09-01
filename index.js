@@ -324,7 +324,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
 
       if(lossInARow < maxLossInARow){
         console.log('-------');
-        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage, leverage), 30000);
+        setTimeout(() => run(symbol, marginCoin, minutes, period, amount, pourcentage, leverage), 12000);
       }
     }
   } catch (e) {
