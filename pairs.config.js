@@ -39,7 +39,7 @@ module.exports = {
       env: {
         ACTIVE: true,
         NODE_PORT:"3003",
-        SYMBOL: "IDEXUSDT_UMCBL",
+        SYMBOL: "CYBERUSDT_UMCBL",
         MARGIN_COIN: "USDT",
         MINUTES: 1,
         AMOUNT: 0.5, // gains: 0.10
