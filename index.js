@@ -27,9 +27,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
     setTimeout(async () => {
-      await client.setMarginMode(process.env.SYMBOL, process.env.MARGIN_COIN, 'fixed');
-      await client.setLeverage(process.env.SYMBOL, process.env.MARGIN_COIN, process.env.LEVERAGE, 'long');
-      await client.setLeverage(process.env.SYMBOL, process.env.MARGIN_COIN, process.env.LEVERAGE, 'short');
+      try{
+        await client.setMarginMode(process.env.SYMBOL, process.env.MARGIN_COIN, 'fixed');
+        await client.setLeverage(process.env.SYMBOL, process.env.MARGIN_COIN, process.env.LEVERAGE, 'long');
+        await client.setLeverage(process.env.SYMBOL, process.env.MARGIN_COIN, process.env.LEVERAGE, 'short');
+      }catch(e){
+        console.log(e);
+      }
       run(process.env.SYMBOL,process.env.MARGIN_COIN, parseInt(process.env.MINUTES), parseInt(process.env.PERIOD), process.env.AMOUNT, parseFloat(process.env.POURCENTAGE), parseInt(process.env.LEVERAGE));
     }, (port - 3000) * 3000);
     
@@ -90,7 +94,7 @@ const newOrder = async function(symbol, marginCoin, side, price, quantity, lever
         
         const position = await client.getPosition(symbol, marginCoin);
         if(position.data){
-          setSLTP(symbol, marginCoin, pourcentage, position, price);
+          setSLTP(symbol, marginCoin, pourcentage, price, side.replace('open_',''));
         }
 
         console.log('order result: ', result);
@@ -170,23 +174,22 @@ const getOrderHistory = async function(symbol){
   } 
 }
 
-const setSLTP = async function(symbol, marginCoin, pourcentage, position, price){
-  var averageOpenPrice = price ? price : position.averageOpenPrice * 1;
+const setSLTP = async function(symbol, marginCoin, pourcentage, price, side){
   var tp = 0;
   var sl = 0;
-  var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
-  var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+  var gainTP = formatNumber(price * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+  var gainSL = formatNumber(price * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
 
   if(currentPosition.SL < 2){
-    if(position.holdSide == 'long'){
-      tp = formatNumber(averageOpenPrice + gainTP, symbol);
-      sl = averageOpenPrice - gainSL, symbol;
+    if(side == 'long'){
+      tp = formatNumber(price + gainTP, symbol);
+      sl = price - gainSL, symbol;
       sl = formatNumber(sl);
       await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'long');
       await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'long');
     }else{
-      tp = formatNumber(averageOpenPrice - gainTP, symbol);
-      sl = averageOpenPrice + gainSL, symbol;
+      tp = formatNumber(price - gainTP, symbol);
+      sl = price + gainSL, symbol;
       sl = formatNumber(sl)
       await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'short');
       await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'short');
@@ -254,6 +257,9 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
           lowInARow = lowInARow + 1
         }
       });
+
+      console.log('highInARow: ' + highInARow);
+      console.log('lowInARow: ' + lowInARow);
       
       var currentPrice = formatNumber(candles[candles.length-1][4], symbol);
       console.log('Price: ' + currentPrice);
@@ -304,7 +310,7 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
                 (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
               );
 
-            if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && lastTrade.totalProfits < 0){
+            if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && (lastTrade && lastTrade.totalProfits < 0)){
               buyCond = lastTrade.posSide == 'long';
               sellCond = lastTrade.posSide == 'short';
             }
@@ -317,7 +323,8 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
             }
           }
         }else{
-          setSLTP(symbol, marginCoin, pourcentage, positions[0], null);
+          var price = positions[0].averageOpenPrice * 1;
+          setSLTP(symbol, marginCoin, pourcentage, price, positions[0].holdSide);
         }
         console.log('Loss in a row : ' + lossInARow);
       }
