@@ -21,7 +21,7 @@ module.exports = {
       script : "./index.js",
       watch  : true,
       env: {
-        ACTIVE: '1',
+        ACTIVE: '0',
         NODE_PORT:"3002",
         SYMBOL: "IDEXUSDT_UMCBL",
         MARGIN_COIN: "USDT",
@@ -37,7 +37,7 @@ module.exports = {
       script : "./index.js",
       watch  : true,
       env: {
-        ACTIVE: '1',
+        ACTIVE: '0',
         NODE_PORT:"3003",
         SYMBOL: "CYBERUSDT_UMCBL",
         MARGIN_COIN: "USDT",
