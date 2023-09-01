@@ -238,82 +238,84 @@ const run = async function(symbol, marginCoin, minutes, period, amount, pourcent
       var lastTrade = null;
 
       var orderHistory = await getOrderHistory(symbol);
-      if(orderHistory.data.orderList){
-        orderHistory.data.orderList.forEach((order) => {
-          if(!lockedRow && order.state == 'filled' && (order.side == 'close_long' || order.side == 'close_short')){
-            if(order.totalProfits < 0){
-              lossInARow++;
-            }else{
-              lockedRow = true;
+      if(orderHistory){
+        if(orderHistory.data.orderList){
+          orderHistory.data.orderList.forEach((order) => {
+            if(!lockedRow && order.state == 'filled' && (order.side == 'close_long' || order.side == 'close_short')){
+              if(order.totalProfits < 0){
+                lossInARow++;
+              }else{
+                lockedRow = true;
+              }
             }
-          }
-        });
-        lastTrade = orderHistory.data.orderList[0];
-      }
+          });
+          lastTrade = orderHistory.data.orderList[0];
+        }
 
-      if(positions.length == 0){
-        currentPosition.SL = 0;
-    
-        if(lossInARow < maxLossInARow){
-          var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
-          var quantity = positionAmount * leverage / currentPrice / pourcentage
-          
-          var buyCond = (lastTrade == null || 
-            (
-              (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
-              (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
-            )
-          );
-
-          var sellCond = 
-            (
-              (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
-              (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+        if(positions.length == 0){
+          currentPosition.SL = 0;
+      
+          if(lossInARow < maxLossInARow){
+            var positionAmount = currentPosition.initAmount * (Math.pow(2, lossInARow));
+            var quantity = positionAmount * leverage / currentPrice / pourcentage
+            
+            var buyCond = (lastTrade == null || 
+              (
+                (lastTrade.posSide == 'long' && lastTrade.totalProfits > 0) ||
+                (lastTrade.posSide == 'short' && lastTrade.totalProfits < 0)
+              )
             );
 
-          if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && lastTrade.totalProfits < 0){
-            buyCond = lastTrade.posSide == 'long';
-            sellCond = lastTrade.posSide == 'short';
-          }
+            var sellCond = 
+              (
+                (lastTrade.posSide == 'short' && lastTrade.totalProfits > 0) ||
+                (lastTrade.posSide == 'long' && lastTrade.totalProfits < 0)
+              );
 
-          if(buyCond){
-            await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
+            if((highInARow > 120 && lowInARow > 120) && (buyCond || sellCond) && lastTrade.totalProfits < 0){
+              buyCond = lastTrade.posSide == 'long';
+              sellCond = lastTrade.posSide == 'short';
+            }
+
+            if(buyCond){
+              await newOrder(symbol, marginCoin, 'open_long', currentPrice, quantity, leverage);
+            }
+            if(sellCond){
+              await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage);
+            }
           }
-          if(sellCond){
-            await newOrder(symbol, marginCoin, 'open_short', currentPrice, quantity, leverage);
+        }else{
+          var averageOpenPrice = positions[0].averageOpenPrice * 1;
+
+          var tp = 0;
+          var sl = 0;
+          var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+          var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
+
+          if(currentPosition.SL < 2){
+            if(positions[0].holdSide == 'long'){
+              tp = formatNumber(averageOpenPrice + gainTP, symbol);
+              sl = averageOpenPrice - gainSL, symbol;
+              if(sl > currentPrice){
+                sl = currentPrice;
+              }
+              sl = formatNumber(sl);
+              await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'long');
+              await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'long');
+            }else{
+              tp = formatNumber(averageOpenPrice - gainTP, symbol);
+              sl = averageOpenPrice + gainSL, symbol;
+              if(sl < currentPrice){
+                sl = currentPrice;
+              }
+              sl = formatNumber(sl)
+              await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'short');
+              await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'short');
+            }
           }
         }
-      }else{
-        var averageOpenPrice = positions[0].averageOpenPrice * 1;
-
-        var tp = 0;
-        var sl = 0;
-        var gainTP = formatNumber(averageOpenPrice * (pourcentage + (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
-        var gainSL = formatNumber(averageOpenPrice * (pourcentage - (currentPosition.settings.takerFeeRate * 2 * 100)) / 100, symbol);
-
-        if(currentPosition.SL < 2){
-          if(positions[0].holdSide == 'long'){
-            tp = formatNumber(averageOpenPrice + gainTP, symbol);
-            sl = averageOpenPrice - gainSL, symbol;
-            if(sl > currentPrice){
-              sl = currentPrice;
-            }
-            sl = formatNumber(sl);
-            await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'long');
-            await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'long');
-          }else{
-            tp = formatNumber(averageOpenPrice - gainTP, symbol);
-            sl = averageOpenPrice + gainSL, symbol;
-            if(sl < currentPrice){
-              sl = currentPrice;
-            }
-            sl = formatNumber(sl)
-            await submitPositionTPSL(symbol, marginCoin, 'profit_plan', tp, 'short');
-            await submitPositionTPSL(symbol, marginCoin, 'loss_plan', sl, 'short');
-          }
-        }
+        console.log('Loss in a row : ' + lossInARow);
       }
-      console.log('Loss in a row : ' + lossInARow);
 
       if(lossInARow < maxLossInARow){
         console.log('-------');
