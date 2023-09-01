@@ -244,13 +244,13 @@ const run = async function(symbol, marginCoin, minutes, amount, pourcentage, lev
       var lowInARow = 0
 
       candles.forEach((candle) => {
-        if(lastHigh < candle[2] || highInARow > process.env.RANGE_PERIOD){
+        if(lastHigh * 1.0005 < candle[2] || highInARow > process.env.RANGE_PERIOD){
           lastHigh = candle[2]
           highInARow = 0
         }else{
           highInARow = highInARow + 1
         }
-        if(lastLow > candle[3] || lowInARow > process.env.RANGE_PERIOD){
+        if(lastLow / 1.0005 > candle[3] || lowInARow > process.env.RANGE_PERIOD){
           lastLow = candle[3]
           lowInARow = 0
         }else{
