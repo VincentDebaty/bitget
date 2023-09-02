@@ -5,7 +5,7 @@ module.exports = {
       script : "./index.js",
       watch  : true,
       env: {
-        ACTIVE: '0',
+        ACTIVE: '1',
         NODE_PORT:"3001",
         SYMBOL: "TOMOUSDT_UMCBL",
         MARGIN_COIN: "USDT",
