@@ -20,7 +20,7 @@ const client = new FuturesClient({
 });
 
 var currentPosition = null;
-var maxLossInARow = 8;
+var maxLossInARow = 9;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
